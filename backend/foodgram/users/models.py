@@ -48,10 +48,6 @@ class User(AbstractUser):
     )
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["username", "email"],
-                                    name="username_email")
-        ]
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
 
