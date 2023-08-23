@@ -1,5 +1,8 @@
 import csv
+
+from django.conf import settings
 from django.core.management import BaseCommand
+
 from recipes.models import Ingredient
 
 
@@ -10,7 +13,7 @@ class Command(BaseCommand):
             return
         print("Загрузка Ingredients данных")
 
-        csv_file_path = "C:/Dev/foodgram-project-react/data/ingredients.csv"
+        csv_file_path = settings.CSV_FILE_PATH
 
         try:
             with open(csv_file_path, "r", encoding="utf-8") as file:
