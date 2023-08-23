@@ -1,9 +1,59 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.password_validation import validate_password
+from django.core.validators import (EmailValidator, MinLengthValidator,
+                                    RegexValidator)
 from django.db import models
 
 
 class User(AbstractUser):
-    pass
+    username = models.CharField(
+        max_length=150,
+        verbose_name="Логин",
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[-a-zA-Z0-9_]+$",
+                message="Имя пользователя может содержать "
+                "только буквы, цифры, дефисы и подчеркивания."
+            ),
+        ]
+    )
+    password = models.CharField(
+        max_length=150,
+        verbose_name="Пароль",
+        validators=[
+            MinLengthValidator(
+                8,
+                message="Пароль должен содержать как минимум 8 символов."
+            ),
+            validate_password,
+        ],
+        help_text="Пароль должен содержать как минимум одну цифру, "
+        "одну букву в верхнем регистре и одну букву в нижнем регистре."
+    )
+    email = models.EmailField(
+        unique=True,
+        verbose_name="Почтовый адрес",
+        max_length=150,
+        validators=[EmailValidator(
+            message="Введите корректный адрес электронной почты.")]
+    )
+    first_name = models.CharField(
+        max_length=150,
+        verbose_name="Имя",
+    )
+    last_name = models.CharField(
+        max_length=150,
+        verbose_name="Фамилия",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["username", "email"],
+                                    name="username_email")
+        ]
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
 
     def __str__(self):
         return self.username
@@ -16,7 +66,6 @@ class Subscription(models.Model):
         related_name="follower",
         verbose_name="Подписчик",
     )
-
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

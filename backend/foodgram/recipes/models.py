@@ -1,4 +1,5 @@
 from django.db import models
+
 from users.models import User
 
 
@@ -81,7 +82,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        odering = ("-pub_date",)
+        ordering = ("-pub_date",)
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
 
@@ -105,7 +106,7 @@ class RecipeIngredient(models.Model):
     )
 
     def __str__(self):
-        return f'{self.recipe} {self.ingredient}'
+        return f"{self.recipe} : {self.ingredient}"
 
 
 class Favorite(models.Model):
@@ -124,6 +125,9 @@ class Favorite(models.Model):
         verbose_name = "Список избранного"
         verbose_name_plural = "Список избранного"
 
+    def __str__(self):
+        return f"{self.user} : {self.recipe}"
+
 
 class ShoppingList(models.Model):
     user = models.ForeignKey(
@@ -140,3 +144,6 @@ class ShoppingList(models.Model):
     class Meta:
         verbose_name = "Список покупок"
         verbose_name_plural = "Списки покупок"
+
+    def __str__(self):
+        return f"{self.user} : {self.recipe}"
