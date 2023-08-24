@@ -1,8 +1,9 @@
+import webcolors
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from recipes.models import Ingredient, Tag
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-
-from users.models import User, Subscription
+from users.models import Subscription, User
 
 
 class UserRegistrationSerializer(UserCreateSerializer):
@@ -49,3 +50,29 @@ class UserProfileSerializer(UserSerializer):
             return False
         return Subscription.objects.filter(
             user=current_user, author=obj).exists()
+
+
+class Hex2NameColor(serializers.Field):
+    def to_representation(self, value):
+        return value
+
+    def to_internal_value(self, data):
+        try:
+            data = webcolors.hex_to_name(data)
+        except ValueError:
+            raise serializers.ValidationError('Для этого цвета нет имени')
+        return data
+
+
+class TagSerializer(serializers.ModelSerializer):
+    color = Hex2NameColor()
+
+    class Meta:
+        model = Tag
+        fields = "__all__"
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = "__all__"

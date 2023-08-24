@@ -1,7 +1,10 @@
+from recipes.models import Ingredient, Tag
 from rest_framework import viewsets
-from users.models import User
-from .serializers import UserProfileSerializer
 from rest_framework.permissions import AllowAny
+from users.models import User
+
+from .serializers import (IngredientSerializer, TagSerializer,
+                          UserProfileSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -11,11 +14,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TagViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = (AllowAny,)
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = (AllowAny,)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
