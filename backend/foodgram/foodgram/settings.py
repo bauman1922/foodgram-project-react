@@ -1,5 +1,4 @@
 import os
-from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -8,7 +7,7 @@ SECRET_KEY = 'django-insecure-c5#r9lpk5^8rf82%*c4!=f-(-bg!55z+b(fw7mf!c@k!8*i2p6
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
@@ -92,11 +91,6 @@ REST_FRAMEWORK = {
 }
 
 
-SIMPLE_JWT = {
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-   'AUTH_HEADER_TYPES': ('Bearer',),
-}
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -116,17 +110,20 @@ AUTH_USER_MODEL = "users.User"
 
 CSV_FILE_PATH = os.path.join(BASE_DIR, "data", "ingredients.csv")
 
-# DJOSER = {
-#     'LOGIN_FIELD': 'email',
-#     'USER_CREATE_PASSWORD_RETYPE': True,
-#     'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,
-#     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
-#     'SEND_CONFIRMATION_EMAIL': True,
-#     'LOGOUT_ON_PASSWORD_CHANGE': True,
-#     'SET_PASSWORD_RETYPE': True,
-#     'SERIALIZERS': {
-#         'user_create': 'your_app.serializers.UserCreateSerializer',
-#         'user': 'djoser.serializers.UserSerializer',
-#         'current_user': 'djoser.serializers.UserSerializer',
-#     },
-# }
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'HIDE_USERS': False,
+    'SERIALIZERS': {
+        'user_create': 'api.serializers.UserRegistrationSerializer',
+        'user': 'api.serializers.UserProfileSerializer',
+        'current_user': 'api.serializers.UserProfileSerializer',
+    },
+    'PERMISSIONS': {
+        'user': ['rest_framework.permissions.IsAuthenticated'],
+        'user_list': ['rest_framework.permissions.AllowAny'],
+        'user_create': ['rest_framework.permissions.AllowAny'],
+        'token_destroy': ['rest_framework.permissions.IsAuthenticated'],
+        'token_create': ['rest_framework.permissions.AllowAny'],
+        'set_password': ['rest_framework.permissions.IsAuthenticated'],
+    },
+}

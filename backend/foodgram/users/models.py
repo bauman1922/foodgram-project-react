@@ -12,9 +12,9 @@ class User(AbstractUser):
         unique=True,
         validators=[
             RegexValidator(
-                regex=r"^[-a-zA-Z0-9_]+$",
+                regex=r"^[\w.@+-]+\z",
                 message="Имя пользователя может содержать "
-                "только буквы, цифры, дефисы и подчеркивания."
+                "только буквы, цифры и символы: @/./+/-/_"
             ),
         ]
     )
