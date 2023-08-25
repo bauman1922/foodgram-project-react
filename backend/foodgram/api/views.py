@@ -4,8 +4,8 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from users.models import User
 
-from .serializers import (IngredientSerializer, ListRecipeSerializer,
-                          RecipeIngredientInSerializer, TagSerializer,
+from .serializers import (CreateRecipeSerializer, IngredientSerializer,
+                          ReadRecipeSerializer, TagSerializer,
                           UserProfileSerializer)
 
 
@@ -32,9 +32,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
 
     def get_serializer_class(self):
-    #     # if self.request.method == "POST" or self.request.method == "PATCH":
-    #     #     return serializers.CreateRecipeSerializer
-        return ListRecipeSerializer
+        if self.request.method == "POST":
+            return CreateRecipeSerializer
+        return ReadRecipeSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

@@ -80,11 +80,3 @@ class Subscription(models.Model):
     def __str__(self):
         return f"{self.user.username} подписан на {self.author.username}"
 
-    @classmethod
-    def subscribe(cls, user, author):
-        if not cls.objects.filter(user=user, author=author).exists():
-            cls.objects.create(user=user, author=author)
-
-    @classmethod
-    def unsubscribe(cls, user, author):
-        cls.objects.filter(user=user, author=author).delete()
