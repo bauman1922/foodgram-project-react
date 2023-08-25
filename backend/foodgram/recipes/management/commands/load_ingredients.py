@@ -1,4 +1,5 @@
 import csv
+import os
 
 from django.conf import settings
 from django.core.management import BaseCommand
@@ -12,7 +13,8 @@ class Command(BaseCommand):
             return
         print("Загрузка Ingredients данных")
 
-        csv_file_path = settings.CSV_FILE_PATH
+        csv_file_path = os.path.join(
+            settings.BASE_DIR, "data", "ingredients.csv")
 
         try:
             with open(csv_file_path, "r", encoding="utf-8") as file:
@@ -20,7 +22,7 @@ class Command(BaseCommand):
                 for row in csv_reader:
                     db = Ingredient(
                         name=row["name"],
-                        unit=row["unit"]
+                        measurement_unit=row["measurement_unit"]
                     )
                     db.save()
                 print("Ingredients импортированы.")
