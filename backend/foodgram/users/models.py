@@ -12,7 +12,7 @@ class User(AbstractUser):
         unique=True,
         validators=[
             RegexValidator(
-                regex=r"^[\w.@+-]+\z",
+                regex=r"^[\w.@+-]+$",
                 message="Имя пользователя может содержать "
                 "только буквы, цифры и символы: @/./+/-/_"
             ),
@@ -34,7 +34,7 @@ class User(AbstractUser):
     email = models.EmailField(
         unique=True,
         verbose_name="Почтовый адрес",
-        max_length=150,
+        max_length=254,
         validators=[EmailValidator(
             message="Введите корректный адрес электронной почты.")]
     )

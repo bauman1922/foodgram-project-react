@@ -1,10 +1,11 @@
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from users.models import User
 
 
 class Tag(models.Model):
     name = models.CharField(
-        max_length=50,
+        max_length=200,
         unique=True,
         verbose_name="Название тэга",
     )
@@ -14,9 +15,14 @@ class Tag(models.Model):
         verbose_name="Цвет",
     )
     slug = models.SlugField(
-        max_length=50,
-        unique=True,
-        verbose_name="Идентификатор тэга",
+        verbose_name="Slug",
+        validators=[
+            RegexValidator(
+                regex=r'^[-a-zA-Z0-9_]+$',
+                message="Slug должен содержать только буквы, цифры, "
+                "дефисы и знаки подчеркивания.",
+            ),
+        ],
     )
 
     class Meta:
@@ -32,7 +38,7 @@ class Ingredient(models.Model):
         max_length=100,
         verbose_name="Название ингредиента",
     )
-    unit = models.CharField(
+    measurement_unit = models.CharField(
         max_length=20,
         verbose_name="Единица измерения",
     )
@@ -52,15 +58,15 @@ class Recipe(models.Model):
         related_name="recipes",
         verbose_name="Автор",
     )
-    title = models.CharField(
-        max_length=250,
+    name = models.CharField(
+        max_length=200,
         verbose_name="Назавание рецепта",
     )
     image = models.ImageField(
         upload_to="recipes/",
         verbose_name="Картинка",
     )
-    description = models.TextField(
+    text = models.TextField(
         verbose_name="Описание приготовления",
     )
     ingredients = models.ManyToManyField(
@@ -74,10 +80,13 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name="Время приготовления",
+        validators=[MinValueValidator(1, message="Время приготовления должно "
+                                      "быть не менее 1 минуты.")],
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
-        verbose_name="Дата публикации"
+        verbose_name="Дата публикации",
+        db_index=True,
     )
 
     class Meta:
@@ -86,7 +95,7 @@ class Recipe(models.Model):
         verbose_name_plural = "Рецепты"
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -98,7 +107,7 @@ class RecipeIngredient(models.Model):
         Ingredient,
         on_delete=models.CASCADE
     )
-    quantity = models.DecimalField(
+    amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         verbose_name="Количество ингредиентов",

@@ -12,16 +12,16 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "unit")
+    list_display = ("id", "name", "measurement_unit")
     search_fields = ("name",)
     list_filter = ("name",)
     empty_value_display = "-пусто-"
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ("id", "author", "title", "favorites_count_display")
-    search_fields = ("title",)
-    list_filter = ("author__username", "title", 'tags__name')
+    list_display = ("id", "author", "name", "favorites_count_display")
+    search_fields = ("name",)
+    list_filter = ("author__username", "name", 'tags__name')
     empty_value_display = "-пусто-"
 
     def favorites_count_display(self, obj):
@@ -32,7 +32,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "recipe", "ingredient", "quantity")
+    list_display = ("id", "recipe", "ingredient", "amount")
     empty_value_display = "-пусто-"
 
 

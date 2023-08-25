@@ -102,6 +102,8 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -109,6 +111,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.User"
 
 CSV_FILE_PATH = os.path.join(BASE_DIR, "data", "ingredients.csv")
+
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
