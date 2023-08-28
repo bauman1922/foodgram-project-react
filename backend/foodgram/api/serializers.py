@@ -1,10 +1,11 @@
 import webcolors
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
-from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from users.models import Subscription, User
 
 
@@ -132,14 +133,14 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
             return False
-        return Favorite.objects.filter(recipe=obj, user=request.user).exists()
+        return Favorite.objects.filter(user=request.user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
             return False
         return ShoppingList.objects.filter(
-            recipe=obj, user=request.user).exists()
+           user=request.user,  recipe=obj).exists()
 
 
 class CreateRecipeIngredientSerializer(serializers.ModelSerializer):
@@ -194,14 +195,12 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop("ingredients")
         tags = validated_data.pop("tags")
-
         instance.name = validated_data.get("name", instance.name)
         instance.image = validated_data.get("image", instance.image)
         instance.text = validated_data.get("text", instance.text)
-        instance.cooking_time = validated_data.get("cooking_time", instance.cooking_time)
-
+        instance.cooking_time = validated_data.get("cooking_time",
+                                                   instance.cooking_time)
         instance.tags.set(tags)
-
         instance.ingredients.all().delete()
         for ingredient_data in ingredients_data:
             ingredient_id = ingredient_data["id"]
@@ -210,3 +209,74 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
                 ingredient_id=ingredient_id, recipe=instance, amount=amount)
         instance.save()
         return instance
+
+
+class FavorShopRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для добавления рецепта в избранное и список покупок."""
+    class Meta:
+        model = Recipe
+        fields = (
+            "id",
+            "name",
+            "image",
+            "cooking_time",
+        )
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Сериализатор для подписок."""
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all()
+    )
+    author = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all()
+    )
+
+    def validate(self, data):
+        user = data.get("user")
+        author = data.get("author")
+        if user == author:
+            raise serializers.ValidationError(
+                "Нельзя подписаться на самого себя!")
+        return data
+
+    class Meta:
+        model = Subscription
+        fields = ("user", "author")
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscription.objects.all(),
+                fields=["user", "author"],
+            )
+        ]
+
+
+class CreateSubscriptionSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания подписок."""
+    recipes_count = serializers.SerializerMethodField(read_only=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+    recipes = FavorShopRecipeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "is_subscribed",
+            "recipes",
+            "recipes_count",
+        )
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.all().count()
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get("request")
+        if request is None or request.user.is_anonymous:
+            return False
+        return Subscription.objects.filter(
+            user=request.user, author=obj
+        ).exists()
