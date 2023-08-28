@@ -66,7 +66,7 @@ class Subscription(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="following",
-        verbose_name="Автор прецепта",
+        verbose_name="Автор рецепта",
     )
 
     class Meta:
@@ -79,4 +79,3 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.user.username} подписан на {self.author.username}"
-

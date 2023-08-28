@@ -38,13 +38,13 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
 
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "recipe")
-    search_fields = ("user__username", "recipe__title")
+    search_fields = ("user__username", "recipe__name")
     empty_value_display = "-пусто-"
 
 
 class ShoppingListAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "recipe")
-    search_fields = ("user__username", "recipe__title")
+    search_fields = ("user__username", "recipe__name")
     empty_value_display = "-пусто-"
 
 
