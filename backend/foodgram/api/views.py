@@ -8,33 +8,67 @@ from rest_framework.response import Response
 
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
-from users.models import User
+from users.models import Subscription, User
 
 from .serializers import (CreateRecipeSerializer, FavorShopRecipeSerializer,
                           IngredientSerializer, ReadRecipeSerializer,
-                          TagSerializer, UserProfileSerializer)
+                          SubscriptionSerializer, TagSerializer,
+                          UserProfileSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """Вьюсет для кастомной модели пользователя."""
+    """Вьюсет для модели пользователя."""
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = (AllowAny,)
 
+    def subscribed(self, request, pk=None):
+        # Пользователь, на которого подписываемся
+        author = get_object_or_404(User, pk=pk)
+        # Текущий пользователь
+        user = request.user
+        if user == author:
+            return Response({"message": "Нельзя подписаться на самого себя!"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        Subscription.objects.get_or_create(user=user, author=author)
+        serializer = SubscriptionSerializer(
+            author, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def unsubscribed(self, request, pk):
+        author = get_object_or_404(User, pk=pk)
+        user = request.user
+        Subscription.objects.filter(user=user, author=author).delete()
+        return Response({"message": "Вы отписались от автора рецепта!"},
+                        status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        methods=["post", "delete"],
+        permission_classes=[IsAuthenticated],
+    )
+    def subscribe(self, request, pk):
+        if request.method == "DELETE":
+            return self.unsubscribed(request, pk)
+        return self.subscribed(request, pk)
+
 
 class TagViewSet(viewsets.ModelViewSet):
+    """Вьюсет для тега."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
+    """Вьюсет для игредиента."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """Вьюсет для рецепта."""
     queryset = Recipe.objects.all()
     permission_classes = (AllowAny,)
 
@@ -50,7 +84,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=["POST", "DELETE"],
+        methods=["post", "delete"],
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk):
@@ -71,7 +105,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=["POST", "DELETE"],
+        methods=["post", "delete"],
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk):
@@ -93,7 +127,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=["GET"],
+        methods=["get"],
         permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
@@ -103,13 +137,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe__in=recipes_id).values(
             "ingredient__name", "ingredient__measurement_unit").annotate(
             amount=Sum("amount"))
-        final_list = self.create_shopping_list_string(ingredients)
+        final_list = self.create_shopping_list(ingredients)
         filename = "shopping_list.txt"
         response = HttpResponse(final_list, content_type="text/plain")
         response["Content-Disposition"] = f"attachment; filename={filename}"
         return response
 
-    def create_shopping_list_string(self, ingredients):
+    def create_shopping_list(self, ingredients):
         shopping_list = ["Список покупок", ""]
         for item in ingredients:
             ingredient_name = item["ingredient__name"]

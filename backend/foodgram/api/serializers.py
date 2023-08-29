@@ -224,35 +224,7 @@ class FavorShopRecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    """Сериализатор для подписок."""
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all()
-    )
-    author = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all()
-    )
-
-    def validate(self, data):
-        user = data.get("user")
-        author = data.get("author")
-        if user == author:
-            raise serializers.ValidationError(
-                "Нельзя подписаться на самого себя!")
-        return data
-
-    class Meta:
-        model = Subscription
-        fields = ("user", "author")
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscription.objects.all(),
-                fields=["user", "author"],
-            )
-        ]
-
-
-class CreateSubscriptionSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания подписок."""
+    """Сериализатор для  подписок."""
     recipes_count = serializers.SerializerMethodField(read_only=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
     recipes = FavorShopRecipeSerializer(many=True, read_only=True)
@@ -278,5 +250,4 @@ class CreateSubscriptionSerializer(serializers.ModelSerializer):
         if request is None or request.user.is_anonymous:
             return False
         return Subscription.objects.filter(
-            user=request.user, author=obj
-        ).exists()
+            user=request.user, author=obj).exists()
