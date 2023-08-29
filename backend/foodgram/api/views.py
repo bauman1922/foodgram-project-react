@@ -5,11 +5,11 @@ from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from users.models import Subscription, User
 
+from .pagination import FoodgramPagination
 from .mixins import SimpleViewSet
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CreateRecipeSerializer, FavorShopRecipeSerializer,
@@ -23,7 +23,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = (AllowAny,)
-    pagination_class = PageNumberPagination
+    pagination_class = FoodgramPagination
 
     def subscribed(self, request, pk=None):
         # Пользователь, на которого подписываемся
@@ -55,36 +55,37 @@ class UserViewSet(viewsets.ModelViewSet):
             return self.unsubscribed(request, pk)
         return self.subscribed(request, pk)
 
-    # @action(
-    #     detail=False,
-    #     methods=["get"],
-    #     permission_classes=[IsAuthenticated]
-    # )
-    # def subscriptions(self, request):
-    #     subscriptions = Subscription.objects.filter(user=request.user)
-    #     serializer = SubscriptionSerializer(subscriptions, many=True)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
+    @action(
+        detail=False,
+        methods=["get"],
+        permission_classes=[IsAuthenticated]
+    )
+    def subscriptions(self, request):
+        queryset = User.objects.filter(following__user=request.user)
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = SubscriptionSerializer(
+            paginated_queryset, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
 
 class TagViewSet(SimpleViewSet):
     """Вьюсет для тега."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    pagination_class = None
 
 
 class IngredientViewSet(SimpleViewSet):
     """Вьюсет для игредиента."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для рецепта."""
     queryset = Recipe.objects.all()
     permission_classes = (IsAuthorOrReadOnly,)
-    pagination_class = PageNumberPagination
+    pagination_class = FoodgramPagination
 
     def get_serializer_class(self):
         if self.request.method == "POST" or self.request.method == "PATCH":
@@ -152,9 +153,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             "ingredient__name", "ingredient__measurement_unit").annotate(
             amount=Sum("amount"))
         final_list = self.create_shopping_list(ingredients)
-        filename = "shopping_list.txt"
+        file_name = "shopping_list.txt"
         response = HttpResponse(final_list, content_type="text/plain")
-        response["Content-Disposition"] = f"attachment; filename={filename}"
+        response["Content-Disposition"] = f"attachment; filename={file_name}"
         return response
 
     def create_shopping_list(self, ingredients):

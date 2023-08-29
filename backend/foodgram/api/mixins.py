@@ -7,3 +7,4 @@ class SimpleViewSet(mixins.ListModelMixin,
                     viewsets.GenericViewSet):
 
     permission_classes = (AllowAny,)
+    pagination_class = None

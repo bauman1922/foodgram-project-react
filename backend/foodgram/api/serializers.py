@@ -223,7 +223,7 @@ class FavorShopRecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    """Сериализатор для  подписок."""
+    """Сериализатор для подписок."""
     recipes_count = serializers.SerializerMethodField(read_only=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
     recipes = FavorShopRecipeSerializer(many=True, read_only=True)
