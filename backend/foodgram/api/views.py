@@ -1,11 +1,13 @@
+from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from requests import Response
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from recipes.models import Favorite, Ingredient, Recipe, ShoppingList, Tag
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingList, Tag)
 from users.models import User
 
 from .serializers import (CreateRecipeSerializer, FavorShopRecipeSerializer,
@@ -48,7 +50,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=["post", "delete"],
+        methods=["POST", "DELETE"],
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk):
@@ -69,7 +71,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=["post", "delete"],
+        methods=["POST", "DELETE"],
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk):
@@ -88,3 +90,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
         deleted.delete()
         return Response({"message": "Рецепт удален из списка покупок"},
                         status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=False,
+        methods=["GET"],
+        permission_classes=[IsAuthenticated]
+    )
+    def download_shopping_cart(self, request):
+        shopping_cart = ShoppingList.objects.filter(user=request.user)
+        recipes_id = [item.recipe.id for item in shopping_cart]
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__in=recipes_id).values(
+            "ingredient__name", "ingredient__measurement_unit").annotate(
+            amount=Sum("amount"))
+        final_list = self.create_shopping_list_string(ingredients)
+        filename = "shopping_list.txt"
+        response = HttpResponse(final_list, content_type="text/plain")
+        response["Content-Disposition"] = f"attachment; filename={filename}"
+        return response
+
+    def create_shopping_list_string(self, ingredients):
+        shopping_list = ["Список покупок", ""]
+        for item in ingredients:
+            ingredient_name = item["ingredient__name"]
+            measurement_unit = item["ingredient__measurement_unit"]
+            amount = item["amount"]
+            shopping_list.append(
+                f'{ingredient_name} ({measurement_unit}) {amount}')
+        return "\n".join(shopping_list)
