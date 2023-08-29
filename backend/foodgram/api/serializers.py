@@ -1,11 +1,10 @@
 import webcolors
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
+from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from users.models import Subscription, User
 
 
@@ -49,7 +48,7 @@ class UserProfileSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         current_user = self.context.get("request").user
-        if not current_user.is_authenticated:
+        if current_user.is_anonymous:
             return False
         return Subscription.objects.filter(
             user=current_user, author=obj).exists()
@@ -130,17 +129,17 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
         return ReadRecipeIngredientSerializer(ingredients, many=True).data
 
     def get_is_favorited(self, obj):
-        request = self.context.get("request")
-        if request is None or request.user.is_anonymous:
+        current_user = self.context.get("request").user
+        if current_user.is_anonymous:
             return False
-        return Favorite.objects.filter(user=request.user, recipe=obj).exists()
+        return Favorite.objects.filter(user=current_user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        request = self.context.get("request")
-        if request is None or request.user.is_anonymous:
+        current_user = self.context.get("request").user
+        if current_user.is_anonymous:
             return False
         return ShoppingList.objects.filter(
-           user=request.user,  recipe=obj).exists()
+            user=current_user, recipe=obj).exists()
 
 
 class CreateRecipeIngredientSerializer(serializers.ModelSerializer):
@@ -246,8 +245,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return obj.recipes.all().count()
 
     def get_is_subscribed(self, obj):
-        request = self.context.get("request")
-        if request is None or request.user.is_anonymous:
+        current_user = self.context.get("request").user
+        if current_user.is_anonymous:
             return False
         return Subscription.objects.filter(
-            user=request.user, author=obj).exists()
+            user=current_user, author=obj).exists()

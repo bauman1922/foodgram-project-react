@@ -1,15 +1,17 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from users.models import Subscription, User
 
+from .mixins import SimpleViewSet
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (CreateRecipeSerializer, FavorShopRecipeSerializer,
                           IngredientSerializer, ReadRecipeSerializer,
                           SubscriptionSerializer, TagSerializer,
@@ -21,6 +23,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = (AllowAny,)
+    pagination_class = PageNumberPagination
 
     def subscribed(self, request, pk=None):
         # Пользователь, на которого подписываемся
@@ -52,25 +55,36 @@ class UserViewSet(viewsets.ModelViewSet):
             return self.unsubscribed(request, pk)
         return self.subscribed(request, pk)
 
+    # @action(
+    #     detail=False,
+    #     methods=["get"],
+    #     permission_classes=[IsAuthenticated]
+    # )
+    # def subscriptions(self, request):
+    #     subscriptions = Subscription.objects.filter(user=request.user)
+    #     serializer = SubscriptionSerializer(subscriptions, many=True)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
-class TagViewSet(viewsets.ModelViewSet):
+
+class TagViewSet(SimpleViewSet):
     """Вьюсет для тега."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (AllowAny,)
+    pagination_class = None
 
 
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(SimpleViewSet):
     """Вьюсет для игредиента."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
+    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для рецепта."""
     queryset = Recipe.objects.all()
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthorOrReadOnly,)
+    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         if self.request.method == "POST" or self.request.method == "PATCH":
