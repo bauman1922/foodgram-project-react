@@ -131,6 +131,7 @@ class Favorite(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name="Рецепт",
+        related_name="favorites",
     )
 
     class Meta:
@@ -146,6 +147,7 @@ class ShoppingList(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name="Пользователь",
+        related_name="shopping_lists",
     )
     recipe = models.ForeignKey(
         Recipe,

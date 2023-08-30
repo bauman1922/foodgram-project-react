@@ -1,6 +1,7 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
 from rest_framework import status, viewsets
@@ -9,8 +10,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from users.models import Subscription, User
 
-from .pagination import FoodgramPagination
+from .filters import RecipeFilter
 from .mixins import SimpleViewSet
+from .pagination import FoodgramPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CreateRecipeSerializer, FavorShopRecipeSerializer,
                           IngredientSerializer, ReadRecipeSerializer,
@@ -65,7 +67,7 @@ class UserViewSet(viewsets.ModelViewSet):
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(queryset, request)
         serializer = SubscriptionSerializer(
-            paginated_queryset, many=True, context={'request': request})
+            paginated_queryset, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -86,6 +88,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = FoodgramPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.request.method == "POST" or self.request.method == "PATCH":
