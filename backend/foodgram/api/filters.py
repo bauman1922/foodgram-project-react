@@ -1,5 +1,6 @@
 from django_filters.rest_framework import FilterSet, filters
-from recipes.models import Recipe, Tag, User
+from rest_framework.filters import SearchFilter
+from recipes.models import Recipe, Tag, User, Favorite, ShoppingList
 
 CHOICES = (
     ("0", "False"),
@@ -11,34 +12,42 @@ class RecipeFilter(FilterSet):
     """Фильтр для рецептов."""
     is_favorited = filters.ChoiceFilter(
         choices=CHOICES,
-        method="get_is_favorited",
+        method="get_is_flagged",
     )
     is_in_shopping_cart = filters.ChoiceFilter(
         choices=CHOICES,
-        method="get_is_in_shopping_cart",
+        method="get_is_flagged",
     )
     author = filters.ModelChoiceFilter(
         queryset=User.objects.all()
     )
-
     tags = filters.ModelChoiceFilter(
-        field_name="tags__slug",
         to_field_name="slug",
         queryset=Tag.objects.all()
     )
 
-    def get_is_favorited(self, queryset, name, value):
+    def get_is_flagged(self, queryset, name, value):
         user = self.request.user
-        if value in CHOICES and user.is_authenticated:
-            return queryset.filter(favorites__user=user)
-        return queryset
+        if user.is_anonymous:
+            return Recipe.objects.none()
 
-    def get_is_in_shopping_cart(self, queryset, name, value):
-        user = self.request.user
-        if value in CHOICES and user.is_authenticated:
-            return queryset.filter(shopping_lists__user=user)
-        return queryset
+        if name == "is_favorited":
+            flag_model = Favorite
+        elif name == "is_in_shopping_cart":
+            flag_model = ShoppingList
+
+        flagged_items = flag_model.objects.filter(user=user)
+        recipes_id = [item.recipe.id for item in flagged_items]
+
+        if value == '1':
+            return queryset.filter(id__in=recipes_id)
+        elif value == '0':
+            return queryset.exclude(id__in=recipes_id)
 
     class Meta:
         model = Recipe
         fields = ("is_favorited", "is_in_shopping_cart", "author", "tags")
+
+
+class IngredientSearch(SearchFilter):
+    search_param = "name"

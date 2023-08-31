@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from users.models import Subscription, User
 
-from .filters import RecipeFilter
+from .filters import IngredientSearch, RecipeFilter
 from .mixins import SimpleViewSet
 from .pagination import FoodgramPagination
 from .permissions import IsAuthorOrReadOnly
@@ -81,6 +81,8 @@ class IngredientViewSet(SimpleViewSet):
     """Вьюсет для игредиента."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    filter_backends = (IngredientSearch,)
+    search_fields = ("^name",)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -90,7 +92,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = FoodgramPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def get_serializer_class(self):
         if self.request.method == "POST" or self.request.method == "PATCH":
