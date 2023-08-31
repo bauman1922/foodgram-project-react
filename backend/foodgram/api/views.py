@@ -8,7 +8,6 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from users.models import Subscription, User
 
 from .filters import IngredientSearch, RecipeFilter
 from .mixins import SimpleViewSet
@@ -18,6 +17,7 @@ from .serializers import (CreateRecipeSerializer, FavorShopRecipeSerializer,
                           IngredientSerializer, ReadRecipeSerializer,
                           SubscriptionSerializer, TagSerializer,
                           UserProfileSerializer)
+from users.models import Subscription, User
 
 
 class UserViewSet(viewsets.ModelViewSet):
