@@ -1,7 +1,6 @@
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.db import models
-
 from users.models import User
 
 MIN_AMOUNT = 1
@@ -113,11 +112,13 @@ class Recipe(models.Model):
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="recipe_ingredients",
     )
     ingredient = models.ForeignKey(
         Ingredient,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="recipe_ingredients",
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name="Количество ингредиентов",

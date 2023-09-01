@@ -2,13 +2,12 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingList, Tag)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingList, Tag)
 from users.models import Subscription, User
 
 from .filters import IngredientSearch, RecipeFilter
@@ -29,22 +28,19 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = FoodgramPagination
 
     def subscribed(self, request, pk=None):
-        # Пользователь, на которого подписываемся
         author = get_object_or_404(User, pk=pk)
-        # Текущий пользователь
         user = request.user
         if user == author:
             return Response({"message": "Нельзя подписаться на самого себя!"},
                             status=status.HTTP_400_BAD_REQUEST)
         Subscription.objects.get_or_create(user=user, author=author)
         serializer = SubscriptionSerializer(
-            author, context={'request': request})
+            author, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def unsubscribed(self, request, pk):
         author = get_object_or_404(User, pk=pk)
-        user = request.user
-        Subscription.objects.filter(user=user, author=author).delete()
+        request.user.follower.filter(author=author).delete()
         return Response({"message": "Вы отписались от автора рецепта!"},
                         status=status.HTTP_204_NO_CONTENT)
 
@@ -108,12 +104,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
+        serializer = FavorShopRecipeSerializer(recipe)
         if request.method == "POST":
-            if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            if serializer.is_recipe_favorited(user, recipe):
                 return Response({"message": "Рецепт уже добавлен в избранное"},
                                 status=status.HTTP_400_BAD_REQUEST)
             Favorite.objects.create(user=user, recipe=recipe)
-            serializer = FavorShopRecipeSerializer(recipe)
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
         deleted = get_object_or_404(Favorite, user=user, recipe=recipe)
@@ -129,13 +125,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
+        serializer = FavorShopRecipeSerializer(recipe)
         if request.method == "POST":
-            if ShoppingList.objects.filter(user=user, recipe=recipe).exists():
+            if serializer.is_recipe_shopping_cart(user, recipe):
                 return Response(
                     {"message": "Рецепт уже добавлен в список покупок"},
                     status=status.HTTP_400_BAD_REQUEST)
             ShoppingList.objects.create(user=user, recipe=recipe)
-            serializer = FavorShopRecipeSerializer(recipe)
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
         deleted = get_object_or_404(ShoppingList, user=user, recipe=recipe)

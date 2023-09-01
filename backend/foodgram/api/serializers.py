@@ -1,12 +1,13 @@
 import webcolors
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from users.models import User
 
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingList, Tag)
-from users.models import Subscription, User
+MIN_COUNT = 1
+MAX_COUNT = 32000
 
 
 class UserRegistrationSerializer(UserCreateSerializer):
@@ -49,10 +50,11 @@ class UserProfileSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         current_user = self.context.get("request").user
-        if current_user.is_anonymous:
-            return False
-        return Subscription.objects.filter(
-            user=current_user, author=obj).exists()
+        return (
+            current_user.follower.filter(author=obj).exists()
+            if current_user.is_authenticated
+            else False
+        )
 
 
 class Hex2NameColor(serializers.Field):
@@ -126,21 +128,24 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
         )
 
     def get_ingredients(self, obj):
-        ingredients = RecipeIngredient.objects.filter(recipe=obj)
+        ingredients = obj.recipe_ingredients.all()
         return ReadRecipeIngredientSerializer(ingredients, many=True).data
 
     def get_is_favorited(self, obj):
         current_user = self.context.get("request").user
-        if current_user.is_anonymous:
-            return False
-        return Favorite.objects.filter(user=current_user, recipe=obj).exists()
+        return (
+            current_user.favorites.filter(recipe=obj).exists()
+            if current_user.is_authenticated
+            else False
+        )
 
     def get_is_in_shopping_cart(self, obj):
         current_user = self.context.get("request").user
-        if current_user.is_anonymous:
-            return False
-        return ShoppingList.objects.filter(
-            user=current_user, recipe=obj).exists()
+        return (
+            current_user.shopping_lists.filter(recipe=obj).exists()
+            if current_user.is_authenticated
+            else False
+        )
 
 
 class CreateRecipeIngredientSerializer(serializers.ModelSerializer):
@@ -148,7 +153,8 @@ class CreateRecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all()
     )
-    amount = serializers.IntegerField(write_only=True)
+    amount = serializers.IntegerField(
+        write_only=True, max_value=MAX_COUNT, min_value=MIN_COUNT)
 
     class Meta:
         model = RecipeIngredient
@@ -164,7 +170,8 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     author = UserProfileSerializer(read_only=True)
     image = Base64ImageField()
     ingredients = CreateRecipeIngredientSerializer(many=True)
-    cooking_time = serializers.IntegerField()
+    cooking_time = serializers.IntegerField(
+        max_value=MAX_COUNT, min_value=MIN_COUNT)
 
     class Meta:
         model = Recipe
@@ -180,11 +187,18 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         )
 
     def create_ingredients(self, recipe, ingredients):
+        recipe_ingredients = []
         for ingredient in ingredients:
             current_ingredient = ingredient["id"]
             amount = ingredient["amount"]
-            RecipeIngredient.objects.create(
-                ingredient=current_ingredient, recipe=recipe, amount=amount)
+            recipe_ingredients.append(
+                RecipeIngredient(
+                    ingredient=current_ingredient,
+                    recipe=recipe,
+                    amount=amount
+                )
+            )
+        RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def create(self, validated_data):
         ingredients = validated_data.pop("ingredients")
@@ -226,6 +240,12 @@ class FavorShopRecipeSerializer(serializers.ModelSerializer):
             "cooking_time",
         )
 
+    def is_recipe_favorited(self, user, recipe):
+        return user.favorites.filter(recipe=recipe).exists()
+
+    def is_recipe_shopping_cart(self, user, recipe):
+        return user.shopping_lists.filter(recipe=recipe).exists()
+
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор для подписок."""
@@ -251,7 +271,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         current_user = self.context.get("request").user
-        if current_user.is_anonymous:
-            return False
-        return Subscription.objects.filter(
-            user=current_user, author=obj).exists()
+        return (
+            current_user.follower.filter(author=obj).exists()
+            if current_user.is_authenticated
+            else False
+        )
