@@ -42,8 +42,7 @@ class RecipeFilter(FilterSet):
 
         if value == '1':
             return queryset.filter(id__in=recipes_id)
-        elif value == '0':
-            return queryset.exclude(id__in=recipes_id)
+        return queryset.exclude(id__in=recipes_id)
 
     class Meta:
         model = Recipe
