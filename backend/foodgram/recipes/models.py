@@ -1,6 +1,7 @@
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.db import models
+
 from users.models import User
 
 MIN_AMOUNT = 1
@@ -26,7 +27,7 @@ class Tag(models.Model):
         verbose_name="Slug",
         validators=[
             RegexValidator(
-                regex=r'^[-a-zA-Z0-9_]+$',
+                regex=r"^[-a-zA-Z0-9_]+$",
                 message="Slug должен содержать только буквы, цифры, "
                 "дефисы и знаки подчеркивания.",
             ),

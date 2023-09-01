@@ -1,6 +1,7 @@
 from django_filters.rest_framework import FilterSet, filters
-from recipes.models import Favorite, Recipe, ShoppingList, Tag, User
 from rest_framework.filters import SearchFilter
+
+from recipes.models import Favorite, Recipe, ShoppingList, Tag, User
 
 CHOICES = (
     ("0", "False"),
@@ -39,7 +40,7 @@ class RecipeFilter(FilterSet):
         flagged_items = flag_model.objects.filter(user=user)
         recipes_id = [item.recipe.id for item in flagged_items]
 
-        if value == '1':
+        if value == "1":
             return queryset.filter(id__in=recipes_id)
         return queryset.exclude(id__in=recipes_id)
 
