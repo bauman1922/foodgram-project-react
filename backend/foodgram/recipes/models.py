@@ -1,7 +1,15 @@
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 from django.db import models
 
 from users.models import User
+
+MIN_AMOUNT = 1
+MAX_AMOUNT = 32000
+
+
+class CustomMeta:
+    ordering = ("-id",)
 
 
 class Tag(models.Model):
@@ -26,7 +34,7 @@ class Tag(models.Model):
         ],
     )
 
-    class Meta:
+    class Meta(CustomMeta):
         verbose_name = "Тэг"
         verbose_name_plural = "Тэги"
 
@@ -44,7 +52,7 @@ class Ingredient(models.Model):
         verbose_name="Единица измерения",
     )
 
-    class Meta:
+    class Meta(CustomMeta):
         verbose_name = "Ингредиент"
         verbose_name_plural = "Ингредиенты"
 
@@ -79,10 +87,14 @@ class Recipe(models.Model):
         Tag,
         verbose_name="Тэг",
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         verbose_name="Время приготовления",
-        validators=[MinValueValidator(1, message="Время приготовления должно "
-                                      "быть не менее 1 минуты.")],
+        validators=[
+            MinValueValidator(MIN_AMOUNT, message="Время приготовления "
+                              "должно быть не менее 1 минуты."),
+            MaxValueValidator(MAX_AMOUNT, message="Время приготовления "
+                              "не может превышать 32000 минут."),
+        ]
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -90,8 +102,7 @@ class Recipe(models.Model):
         db_index=True,
     )
 
-    class Meta:
-        ordering = ("-pub_date",)
+    class Meta(CustomMeta):
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
 
@@ -108,13 +119,17 @@ class RecipeIngredient(models.Model):
         Ingredient,
         on_delete=models.CASCADE
     )
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    amount = models.PositiveSmallIntegerField(
         verbose_name="Количество ингредиентов",
+        validators=[
+            MinValueValidator(MIN_AMOUNT, "Количество ингредиентов "
+                              "должно быть не менее 1."),
+            MaxValueValidator(MAX_AMOUNT, "Количество ингредиентов "
+                              "не может превышать 32000."),
+        ]
     )
 
-    class Meta:
+    class Meta(CustomMeta):
         verbose_name = "Рецепт/Ингредиент"
         verbose_name_plural = "Рецепты/Ингредиенты"
 
@@ -136,7 +151,7 @@ class Favorite(models.Model):
         related_name="favorites",
     )
 
-    class Meta:
+    class Meta(CustomMeta):
         verbose_name = "Список избранного"
         verbose_name_plural = "Список избранного"
 
@@ -158,7 +173,7 @@ class ShoppingList(models.Model):
         related_name="shopping_lists",
     )
 
-    class Meta:
+    class Meta(CustomMeta):
         verbose_name = "Список покупок"
         verbose_name_plural = "Список покупок"
 

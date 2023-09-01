@@ -5,6 +5,10 @@ from django.core.validators import (EmailValidator, MinLengthValidator,
 from django.db import models
 
 
+class CustomUserMeta:
+    ordering = ("-id",)
+
+
 class User(AbstractUser):
     username = models.CharField(
         max_length=150,
@@ -47,7 +51,7 @@ class User(AbstractUser):
         verbose_name="Фамилия",
     )
 
-    class Meta:
+    class Meta(CustomUserMeta):
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
 
@@ -69,7 +73,7 @@ class Subscription(models.Model):
         verbose_name="Автор рецепта",
     )
 
-    class Meta:
+    class Meta(CustomUserMeta):
         constraints = [
             models.UniqueConstraint(fields=["user", "author"],
                                     name="unique_subscription")

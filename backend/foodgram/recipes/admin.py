@@ -18,11 +18,17 @@ class IngredientAdmin(admin.ModelAdmin):
     empty_value_display = "-пусто-"
 
 
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    min_num = 1
+
+
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ("id", "author", "name", "favorites_count_display")
     search_fields = ("name",)
     list_filter = ("author__username", "name", 'tags__name')
     empty_value_display = "-пусто-"
+    inlines = (RecipeIngredientInline,)
 
     def favorites_count_display(self, obj):
         favorites_count = Favorite.objects.filter(recipe=obj).count()
