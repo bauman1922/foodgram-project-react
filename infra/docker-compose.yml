@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 
 volumes:
   pg_data:
@@ -35,7 +35,7 @@ services:
     image: nginx:1.19.3
     env_file: .env
     ports:
-      - "80:80"
+      - 80:80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
