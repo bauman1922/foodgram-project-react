@@ -171,5 +171,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         for key, value in final_list.items():
             shopping_list.append(
                 f"{key} - {value['amount']} {value['measurement_unit']}")
-        response = HttpResponse(shopping_list, content_type="text/plain")
+        shopping_list_text = "\n".join(shopping_list)
+        response = HttpResponse(shopping_list_text, content_type="text/plain")
         return response
