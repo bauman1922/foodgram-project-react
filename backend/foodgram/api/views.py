@@ -1,4 +1,7 @@
+from collections import defaultdict
+
 from django.db.models import Sum
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,6 +12,7 @@ from rest_framework.response import Response
 
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
+from rest_framework import status, viewsets
 from users.models import Subscription, User
 from .filters import IngredientSearch, RecipeFilter
 from .mixins import SimpleViewSet
@@ -145,23 +149,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def download_shopping_cart(self, request):
-        ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping_list__user=request.user
-        ).order_by("ingredient__name").values(
-            "ingredient__name", "ingredient__measurement_unit"
-        ).annotate(amount=Sum("amount"))
-        final_list = self.create_shopping_list(ingredients)
-        file_name = "shopping_list.txt"
-        response = HttpResponse(final_list, content_type="text/plain")
-        response["Content-Disposition"] = f"attachment; filename={file_name}"
-        return response
+        shopping_cart = request.user.shopping_lists.all()
+        ingredients_data = RecipeIngredient.objects.filter(
+            recipe__in=[item.recipe for item in shopping_cart]
+        ).values(
+            "ingredient__name",
+            "ingredient__measurement_unit"
+        ).annotate(
+            amount=Coalesce(Sum("amount"), 0)
+        )
 
-    def create_shopping_list(self, ingredients):
-        shopping_list = ["Список покупок", ""]
-        for item in ingredients:
+        final_list = defaultdict(lambda: {"measurement_unit": "", "amount": 0})
+        for item in ingredients_data:
             ingredient_name = item["ingredient__name"]
             measurement_unit = item["ingredient__measurement_unit"]
             amount = item["amount"]
+            final_list[ingredient_name]["measurement_unit"] = measurement_unit
+            final_list[ingredient_name]["amount"] += amount
+
+        shopping_list = ["Список покупок", ""]
+        for key, value in final_list.items():
             shopping_list.append(
-                f'{ingredient_name} ({measurement_unit}) {amount}')
-        return "\n".join(shopping_list)
+                f"{key} - {value['amount']} {value['measurement_unit']}")
+        response = HttpResponse(shopping_list, content_type="text/plain")
+        return response
