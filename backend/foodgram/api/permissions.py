@@ -14,7 +14,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
             request.method == "POST"
         )):
             return True
-        return all(
-            request.method in ["DELETE", "PATCH"],
-            request.user == obj.author
+        return (
+            request.method in ["DELETE", "PATCH"]
+            and request.user == obj.author
         )
