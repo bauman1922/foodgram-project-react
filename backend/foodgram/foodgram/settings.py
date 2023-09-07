@@ -1,23 +1,13 @@
 import os
 from pathlib import Path
 
-# from dotenv import load_dotenv
-
-# load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-c5#r9lpk5^8rf82%*c4!=f-(-bg!55z+b(fw7mf!c@k!8*i2p6'
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
-
-# SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
-
-# DEBUG = os.getenv('DEBUG', 'False') == 'True'
-
-# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default=['*']).split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -65,14 +55,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -83,7 +65,6 @@ DATABASES = {
         "PORT": os.getenv("DB_PORT", 5432),
     }
 }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -114,7 +95,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6,
 }
 
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -131,13 +111,9 @@ STATIC_ROOT = BASE_DIR / "static"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "users.User"
-
-CSV_FILE_PATH = os.path.join(BASE_DIR, "data", "ingredients.csv")
-
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
