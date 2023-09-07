@@ -12,7 +12,6 @@ from rest_framework.response import Response
 
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
-from rest_framework import status, viewsets
 from users.models import Subscription, User
 from .filters import IngredientSearch, RecipeFilter
 from .mixins import SimpleViewSet
