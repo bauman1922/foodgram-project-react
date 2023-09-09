@@ -22,7 +22,7 @@ class RecipeFilter(FilterSet):
     author = filters.ModelChoiceFilter(
         queryset=User.objects.all()
     )
-    tags = filters.ModelChoiceFilter(
+    tags = filters.ModelMultipleChoiceFilter(
         field_name="tags__slug",
         to_field_name="slug",
         queryset=Tag.objects.all()
