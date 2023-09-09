@@ -4,8 +4,10 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator, ValidationError
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, Favorite, ShoppingList
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingList, Tag)
 from users.models import Subscription, User
+
 
 MIN_COUNT = 1
 MAX_COUNT = 32000
