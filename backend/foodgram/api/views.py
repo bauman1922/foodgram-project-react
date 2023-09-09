@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingList, Tag)
 from users.models import Subscription, User
+
 from .filters import IngredientSearch, RecipeFilter
 from .mixins import SimpleViewSet
 from .pagination import FoodgramPagination
@@ -30,15 +31,12 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
     pagination_class = FoodgramPagination
 
-    def subscribed(self, request, pk=None):
+    def subscribed(self, request, pk):
         author = get_object_or_404(User, pk=pk)
-        user = request.user
-        if user == author:
-            return Response({"message": "Нельзя подписаться на самого себя!"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        Subscription.objects.get_or_create(user=user, author=author)
         serializer = SubscriptionSerializer(
             author, context={"request": request})
+        serializer.validate(serializer.data)
+        Subscription.objects.get_or_create(user=request.user, author=author)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def unsubscribed(self, request, pk):
@@ -107,11 +105,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-        serializer = FavorShopRecipeSerializer(recipe)
         if request.method == "POST":
-            if serializer.is_recipe_favorited(user, recipe):
-                return Response({"message": "Рецепт уже добавлен в избранное"},
-                                status=status.HTTP_400_BAD_REQUEST)
+            serializer = FavorShopRecipeSerializer(
+                recipe, context={"request": request})
+            serializer.validate_favorited(serializer.data)
             Favorite.objects.create(user=user, recipe=recipe)
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
@@ -128,12 +125,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-        serializer = FavorShopRecipeSerializer(recipe)
         if request.method == "POST":
-            if serializer.is_recipe_shopping_cart(user, recipe):
-                return Response(
-                    {"message": "Рецепт уже добавлен в список покупок"},
-                    status=status.HTTP_400_BAD_REQUEST)
+            serializer = FavorShopRecipeSerializer(
+                recipe, context={"request": request})
+            serializer.validate_shopping_cart(serializer.data)
             ShoppingList.objects.create(user=user, recipe=recipe)
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)

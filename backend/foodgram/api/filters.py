@@ -23,6 +23,7 @@ class RecipeFilter(FilterSet):
         queryset=User.objects.all()
     )
     tags = filters.ModelChoiceFilter(
+        field_name="tags__slug",
         to_field_name="slug",
         queryset=Tag.objects.all()
     )

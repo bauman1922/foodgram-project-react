@@ -2,10 +2,10 @@ import webcolors
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
+from rest_framework.validators import UniqueValidator, ValidationError
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
-from users.models import User
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag, Favorite, ShoppingList
+from users.models import Subscription, User
 
 MIN_COUNT = 1
 MAX_COUNT = 32000
@@ -241,11 +241,19 @@ class FavorShopRecipeSerializer(serializers.ModelSerializer):
             "cooking_time",
         )
 
-    def is_recipe_favorited(self, user, recipe):
-        return user.favorites.filter(recipe=recipe).exists()
+    def validate_favorited(self, data):
+        current_user = self.context.get("request").user
+        if Favorite.objects.filter(user=current_user, recipe=data["id"]
+                                   ).exists():
+            raise ValidationError("Рецепт уже добавлен в избранное!")
+        return data
 
-    def is_recipe_shopping_cart(self, user, recipe):
-        return user.shopping_lists.filter(recipe=recipe).exists()
+    def validate_shopping_cart(self, data):
+        current_user = self.context.get("request").user
+        if ShoppingList.objects.filter(user=current_user, recipe=data["id"]
+                                       ).exists():
+            raise ValidationError("Рецепт уже добавлен в список покупок!")
+        return data
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -277,3 +285,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             if current_user.is_authenticated
             else False
         )
+
+    def validate(self, data):
+        current_user = self.context.get("request").user
+        if Subscription.objects.filter(user=current_user, author=data["id"]
+                                       ).exists():
+            raise ValidationError("Вы уже подписаны на этого пользователя!")
+        if self.context.get("request").user.id == data["id"]:
+            raise ValidationError("Нельзя подписаться на самого себя!")
+        return data
